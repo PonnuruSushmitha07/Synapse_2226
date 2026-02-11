@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio to Text Converter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .primary-btn {
+            background: #667eea;
+            color: white;
+        }
+        .primary-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .primary-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .secondary-btn {
+            background: #f44336;
+            color: white;
+        }
+        .secondary-btn:hover {
+            background: #d32f2f;
+        }
+        .secondary-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .success-btn:hover {
+            background: #45a049;
+        }
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #f44336;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .status {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .waveform-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        canvas {
+            width: 100%;
+            height: 120px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #FF9800;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .file-input-label:hover {
+            background: #F57C00;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+        }
+        .save-task-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+        .char-count {
+            font-size: 12px;
+            color: #999;
+            text-align: right;
+            margin-top: 5px;
+        }
+        .timer {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="{% url 'todo:dashboard' %}" class="back-link">← Back to Dashboard</a>
+    
+    <h1>🎤 Audio to Text Converter</h1>
+    <p class="subtitle">Convert your voice or audio files into text instantly</p>
+
+    <!-- Microphone Recording Section -->
+    <div class="section">
+        <h2>🎙️ Record from Microphone</h2>
+        <p>Click the button below and start speaking. Your voice will be converted to text in real-time.</p>
+        
+        <div class="controls">
+            <button id="recordBtn" class="primary-btn">🎤 Start Recording</button>
+            <button id="stopBtn" class="secondary-btn" disabled>⏹️ Stop Recording</button>
+            <button id="clearBtn" class="secondary-btn">🗑️ Clear</button>
+        </div>
+
+        <div id="recordStatus" class="status info" style="display:none;"></div>
+        <div class="timer" id="timer" style="display:none;"></div>
+        <div class="waveform-container">
+            <canvas id="waveformCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Audio Output Section -->
+    <div class="section">
+        <h2>📝 Converted Text Output</h2>
+        <p>Your audio will appear as text here:</p>
+        <textarea id="outputText" placeholder="Captured text will appear here..." readonly></textarea>
+        <div class="char-count"><span id="charCount">0</span> characters</div>
+    </div>
+
+    <!-- Save as Task Section -->
+    <div class="section save-task-section">
+        <h2>💾 Save as Task</h2>
+        <form method="POST" action="{% url 'todo:add' %}" id="saveForm">   
+            {% csrf_token %}
+            <input type="hidden" id="hiddenInput" name="title">
+            <button type="submit" class="success-btn" id="saveBtn" disabled style="width:100%;">✅ Save as Task</button>
+        </form>
+    </div>
+
+    <!-- Info Section -->
+    <div class="section" style="border-left-color: #FF9800; background: #fff3e0;">
+        <h2>ℹ️ How to Use</h2>
+        <ol style="color: #666; line-height: 1.8;">
+            <li>Click <strong>"Start Recording"</strong> button</li>
+            <li>Speak clearly into your microphone</li>
+            <li>Your speech will be converted to text automatically</li>
+            <li>Click <strong>"Stop Recording"</strong> when done</li>
+            <li>Review the text in the output box</li>
+            <li>Click <strong>"Save as Task"</strong> to add it to your todo list</li>
+        </ol>
+        <p style="font-size: 12px; color: #f57c00; margin-top: 15px;">
+            <strong>⚠️ Note:</strong> Works best in Chrome, Edge, and Safari. Requires microphone permission.
+        </p>
+    </div>
+</div>
+
+<script>
+    const recordBtn = document.getElementById('recordBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const outputText = document.getElementById('outputText');
+    const recordStatus = document.getElementById('recordStatus');
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const waveformCtx = waveformCanvas.getContext('2d');
+    const saveBtn = document.getElementById('saveBtn');
+    const hiddenInput = document.getElementById('hiddenInput');
+    const saveForm = document.getElementById('saveForm');
+    const timerDiv = document.getElementById('timer');
+    const charCount = document.getElementById('charCount');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        recordBtn.disabled = true;
+        recordStatus.textContent = '❌ Speech Recognition not supported in your browser. Use Chrome, Edge, or Safari.';
+        recordStatus.className = 'status error';
+        recordStatus.style.display = 'block';
+    } else {
+        const recognition = new SpeechRecognition();
+        let isRecording = false;
+        let recordingTime = 0;
+        let timerInterval;
+
+        recognition.language = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recordBtn.addEventListener('click', function() {
+            isRecording = true;
+            recordingTime = 0;
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+            outputText.value = '';
+            recordStatus.textContent = '🎤 Listening... Speak now!';
+            recordStatus.className = 'status info';
+            recordStatus.style.display = 'block';
+            timerDiv.style.display = 'block';
+            
+            // Start timer
+            timerInterval = setInterval(() => {
+                recordingTime++;
+                const mins = Math.floor(recordingTime / 60);
+                const secs = recordingTime % 60;
+                timerDiv.textContent = `⏱️ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }, 1000);
+
+            recognition.start();
+            animateWaveform();
+        });
+
+        stopBtn.addEventListener('click', function() {
+            isRecording = false;
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+            recognition.stop();
+            clearInterval(timerInterval);
+            timerDiv.style.display = 'none';
+            recordStatus.textContent = '✅ Recording stopped. Processing...';
+            recordStatus.className = 'status success';
+        });
+
+        clearBtn.addEventListener('click', function() {
+            outputText.value = '';
+            recordStatus.style.display = 'none';
+            charCount.textContent = '0';
+            saveBtn.disabled = true;
+            hiddenInput.value = '';
+            recordStatus.innerHTML = '';
+        });
+
+        recognition.addEventListener('result', function(event) {
+            let final_transcript = '';
+            let interim_transcript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                
+                if (event.results[i].isFinal) {
+                    final_transcript += transcript + ' ';
+                } else {
+                    interim_transcript += transcript;
+                }
+            }
+
+            if (final_transcript) {
+                let current = outputText.value;
+                if (current && !current.endsWith(' ')) {
+                    current += ' ';
+                }
+                outputText.value = current + final_transcript;
+                updateCharCount();
+                updateSaveButton();
+            }
+        });
+
+        recognition.addEventListener('end', function() {
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+            clearInterval(timerInterval);
+            timerDiv.style.display = 'none';
+            
+            if (outputText.value.trim()) {
+                recordStatus.textContent = '✅ Done! Review your text and save as task.';
+                recordStatus.className = 'status success';
+            } else {
+                recordStatus.textContent = '⚠️ No speech detected. Try again.';
+                recordStatus.className = 'status warning';
+            }
+        });
+
+        recognition.addEventListener('error', function(event) {
+            recordStatus.textContent = '❌ Error: ' + event.error;
+            recordStatus.className = 'status error';
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+            clearInterval(timerInterval);
+            isRecording = false;
+        });
+
+        function updateCharCount() {
+            charCount.textContent = outputText.value.length;
+        }
+
+        function updateSaveButton() {
+            if (outputText.value.trim()) {
+                saveBtn.disabled = false;
+                hiddenInput.value = outputText.value.trim();
+            } else {
+                saveBtn.disabled = true;
+            }
+        }
+
+        function animateWaveform() {
+            if (!isRecording) return;
+
+            const width = waveformCanvas.width;
+            const height = waveformCanvas.height;
+            const centerY = height / 2;
+
+            waveformCtx.fillStyle = '#f9f9f9';
+            waveformCtx.fillRect(0, 0, width, height);
+
+            waveformCtx.strokeStyle = '#667eea';
+            waveformCtx.lineWidth = 2;
+            waveformCtx.beginPath();
+
+            for (let i = 0; i < width; i++) {
+                const y = centerY + Math.sin(i * 0.02 + Date.now() * 0.005) * (height / 3) * Math.random();
+                if (i === 0) {
+                    waveformCtx.moveTo(i, y);
+                } else {
+                    waveformCtx.lineTo(i, y);
+                }
+            }
+            waveformCtx.stroke();
+
+            requestAnimationFrame(animateWaveform);
+        }
+    }
+</script>
+
+</body>
+</html>

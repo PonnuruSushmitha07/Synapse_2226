@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Dashboard - Todo App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .stats {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat {
+            flex: 1;
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 14px;
+        }
+        button {
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        li.completed {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .category {
+            font-size: 12px;
+            background: #eee;
+            padding: 4px 8px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .actions a {
+            margin-left: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .complete {
+            color: green;
+        }
+        .delete {
+            color: red;
+        }
+        .filters {
+            margin-bottom: 20px;
+        }
+        .filters a {
+            margin-right: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>✅ Task Dashboard</h1>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat">Total<br>{{ total_tasks }}</div>
+        <div class="stat">Completed<br>{{ completed_tasks }}</div>
+        <div class="stat">Pending<br>{{ pending_tasks }}</div>
+    </div>
+
+    <!-- ADD TASK -->
+    <form method="POST" action="{% url 'todo:add' %}">
+        {% csrf_token %}
+        <input type="text" name="title" placeholder="Enter task (category auto detected)" required>
+        <input type="datetime-local" name="deadline">
+        <button type="submit">Add Task</button>
+    </form>
+
+    <!-- CATEGORY FILTER -->
+    <div class="filters">
+        <strong>Filter:</strong>
+        <a href="{% url 'todo:dashboard' %}">All</a>
+        <a href="?category=daily">Daily</a>
+        <a href="?category=reading">Reading</a>
+        <a href="?category=writing">Writing</a>
+        <a href="?category=hobbies">Hobbies</a>
+    </div>
+
+    <!-- TASK LIST -->
+    <ul>
+        {% for task in tasks %}
+        <li class="{% if task.completed %}completed{% endif %}">
+            <div>
+                <strong>{{ task.title }}</strong><br>
+
+                <span class="category">
+                    📂 {{ task.get_category_display }}
+                </span>
+
+                {% if task.deadline %}
+                <br>
+                <small>⏰ {{ task.deadline|date:"M d, Y H:i" }}</small>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                {% if not task.completed %}
+                <a class="complete" href="{% url 'todo:complete' task.id %}">✔ Complete</a>
+                {% endif %}
+                <a class="delete" href="{% url 'todo:delete' task.id %}">🗑 Delete</a>
+            </div>
+        </li>
+        {% empty %}
+        <li>No tasks found</li>
+        {% endfor %}
+    </ul>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <a href="{% url 'todo:audio_to_text' %}">🎤 Audio to Text</a>
+        <a href="{% url 'todo:logout' %}">🚪 Logout</a>
+    </div>
+
+</div>
+</body>
+</html>
